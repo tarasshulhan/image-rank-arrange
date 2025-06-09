@@ -11,9 +11,10 @@ interface ImageItem {
 interface RankingGridProps {
   images: ImageItem[];
   onReorder: (newOrder: ImageItem[]) => void;
+  onImageClick?: (image: ImageItem) => void;
 }
 
-const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder }) => {
+const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder, onImageClick }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleDragStart = useCallback((index: number) => (e: React.DragEvent<HTMLDivElement>) => {
@@ -51,28 +52,32 @@ const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder }) => {
     setDraggedIndex(null);
   }, []);
 
+  const handleImageClick = useCallback((index: number) => {
+    if (onImageClick && draggedIndex === null) {
+      onImageClick(images[index]);
+    }
+  }, [onImageClick, images, draggedIndex]);
+
   if (images.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-center mb-6">Your Ranking</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {images.map((image, index) => (
-          <div key={image.id} onDragEnd={handleDragEnd}>
-            <RankableImage
-              src={image.src}
-              alt={image.alt}
-              rank={index + 1}
-              onDragStart={handleDragStart(index)}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop(index)}
-              isDragging={draggedIndex === index}
-            />
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {images.map((image, index) => (
+        <div key={image.id} onDragEnd={handleDragEnd}>
+          <RankableImage
+            src={image.src}
+            alt={image.alt}
+            rank={index + 1}
+            onDragStart={handleDragStart(index)}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop(index)}
+            onImageClick={() => handleImageClick(index)}
+            isDragging={draggedIndex === index}
+          />
+        </div>
+      ))}
     </div>
   );
 };

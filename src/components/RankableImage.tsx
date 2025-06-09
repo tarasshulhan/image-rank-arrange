@@ -8,6 +8,7 @@ interface RankableImageProps {
   onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onImageClick?: () => void;
   isDragging: boolean;
 }
 
@@ -18,6 +19,7 @@ const RankableImage: React.FC<RankableImageProps> = ({
   onDragStart,
   onDragOver,
   onDrop,
+  onImageClick,
   isDragging
 }) => {
   const getRankSuffix = (rank: number): string => {
@@ -32,16 +34,25 @@ const RankableImage: React.FC<RankableImageProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onImageClick) {
+      onImageClick();
+    }
+  };
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onClick={handleClick}
       className={`
         relative group cursor-move transition-all duration-200 rounded-lg overflow-hidden
         ${isDragging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}
         hover:scale-105 hover:shadow-lg
+        ${onImageClick ? 'cursor-pointer' : 'cursor-move'}
       `}
     >
       <div className="aspect-square bg-muted rounded-lg overflow-hidden">
