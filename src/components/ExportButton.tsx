@@ -19,9 +19,17 @@ const ExportButton: React.FC<ExportButtonProps> = ({ targetRef, filename = 'rank
         window.getComputedStyle(node).backgroundColor ||
         window.getComputedStyle(document.body).backgroundColor ||
         'transparent';
+
+      // Ensure full content capture and avoid fractional cropping
+      const width = Math.ceil(node.scrollWidth);
+      const height = Math.ceil(node.scrollHeight);
+
       const dataUrl = await toPng(node, {
         backgroundColor: bg,
-        pixelRatio: 2
+        pixelRatio: 2,
+        width,
+        height,
+        style: { paddingBottom: '2px' }
       });
 
       const link = document.createElement('a');
