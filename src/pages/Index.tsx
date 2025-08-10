@@ -105,10 +105,10 @@ const Index = () => {
 
             {rankedImages.length > 0 && (
               <div ref={exportRef} className="bg-background p-6 rounded-lg space-y-4">
-                <div className="flex justify-between items-center sm:flex-col">
+
                   <h2 className="text-xl font-semibold text-foreground">Your Rankings</h2>
                   <p className="text-l text-muted-foreground">Click ranked images to remove them & drag to reorder</p>
-                </div>
+     
                 <RankingGrid 
                   images={rankedImages} 
                   onReorder={handleReorder}
