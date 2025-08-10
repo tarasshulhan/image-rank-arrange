@@ -14,8 +14,13 @@ const ExportButton: React.FC<ExportButtonProps> = ({ targetRef, filename = 'rank
     if (!targetRef.current) return;
 
     try {
-      const dataUrl = await toPng(targetRef.current, {
-        backgroundColor: '#ffffff',
+      const node = targetRef.current as HTMLElement;
+      const bg =
+        window.getComputedStyle(node).backgroundColor ||
+        window.getComputedStyle(document.body).backgroundColor ||
+        'transparent';
+      const dataUrl = await toPng(node, {
+        backgroundColor: bg,
         pixelRatio: 2
       });
 
