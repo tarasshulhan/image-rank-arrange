@@ -16,6 +16,7 @@ const Index = () => {
   const [unrankedImages, setUnrankedImages] = useState<ImageItem[]>([]);
   const [rankedImages, setRankedImages] = useState<ImageItem[]>([]);
   const exportRef = useRef<HTMLDivElement>(null);
+  const additionalUploadRef = useRef<HTMLInputElement>(null);
 
   const handleImagesUpload = useCallback((files: File[]) => {
     const newImages: ImageItem[] = files.map((file) => ({
@@ -68,24 +69,29 @@ const Index = () => {
           <div className="space-y-8">
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
-                <label htmlFor="additional-upload">
-                  <input
-                    id="additional-upload"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length > 0) {
-                        handleImagesUpload(files);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  <Button variant="outline" className="cursor-pointer">
-                    Add More Images
-                  </Button>
-                </label>
+                <input
+                  ref={additionalUploadRef}
+                  id="additional-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                      handleImagesUpload(files);
+                    }
+                    e.currentTarget.value = "";
+                  }}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => additionalUploadRef.current?.click()}
+                  aria-label="Add more images"
+                >
+                  Add More Images
+                </Button>
                 <Button
                   variant="outline"
                   onClick={clearAll}
