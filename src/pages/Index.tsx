@@ -57,10 +57,7 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-foreground">Image Ranker</h1>
-          <p className="text-lg text-muted-foreground">
-            Upload images and drag them to create your perfect ranking
-          </p>
+          <h1 className="text-4xl font-bold text-foreground">Ranking Creator</h1>
         </div>
 
         {allImages.length === 0 ? (
