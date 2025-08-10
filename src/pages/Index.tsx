@@ -104,7 +104,7 @@ const Index = () => {
             </div>
 
             {rankedImages.length > 0 && (
-              <div ref={exportRef} className="bg-background p-6 rounded-lg space-y-4">
+              <div ref={exportRef} className=" space-y-4">
 
                   <h2 className="text-xl font-semibold text-foreground">Your Rankings</h2>
                   <p className="text-l text-muted-foreground">Click ranked images to remove them & drag to reorder</p>
