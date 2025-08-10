@@ -63,7 +63,7 @@ const RankableImage: React.FC<RankableImageProps> = ({
           draggable={false}
         />
       </div>
-      <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-sm font-bold shadow-lg">
+      <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-sm font-bold shadow-lg ${rank === 1 ? 'bg-rank-gold text-rank-gold-foreground' : rank === 2 ? 'bg-rank-silver text-rank-silver-foreground' : rank === 3 ? 'bg-rank-bronze text-rank-bronze-foreground' : 'bg-primary text-primary-foreground'}`}>
         {rank}{getRankSuffix(rank)}
       </div>
     </div>
