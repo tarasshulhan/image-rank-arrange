@@ -57,7 +57,7 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-foreground">Ranking Creator</h1>
+          <h1 className="text-4xl font-bold text-foreground">Rankings Creator</h1>
         </div>
 
         {allImages.length === 0 ? (
@@ -106,7 +106,7 @@ const Index = () => {
             {rankedImages.length > 0 && (
               <div ref={exportRef} className="bg-background p-6 rounded-lg space-y-4">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-foreground">Your Ranking</h2>
+                  <h2 className="text-xl font-semibold text-foreground">Your Rankings</h2>
                   <p className="text-l text-muted-foreground">Click ranked images to remove them & drag to reorder</p>
                 </div>
                 <RankingGrid 
