@@ -1,8 +1,8 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 interface ExportButtonProps {
   targetRef: React.RefObject<HTMLElement>;
@@ -14,16 +14,15 @@ const ExportButton: React.FC<ExportButtonProps> = ({ targetRef, filename = 'rank
     if (!targetRef.current) return;
 
     try {
-      const canvas = await html2canvas(targetRef.current, {
+      const dataUrl = await toPng(targetRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true
+        pixelRatio: 2,
+        cacheBust: true
       });
 
       const link = document.createElement('a');
       link.download = `${filename}.png`;
-      link.href = canvas.toDataURL();
+      link.href = dataUrl;
       link.click();
     } catch (error) {
       console.error('Error exporting image:', error);
