@@ -100,10 +100,24 @@ const Index = () => {
               )}
             </div>
 
+            {rankedImages.length > 0 && (
+              <div ref={exportRef} className="bg-background p-6 rounded-lg space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-foreground">Your Ranking</h2>
+                  <p className="text-l text-muted-foreground">Click ranked images to remove them & drag to reorder</p>
+                </div>
+                <RankingGrid 
+                  images={rankedImages} 
+                  onReorder={handleReorder}
+                  onImageClick={moveToUnranked}
+                />
+              </div>
+            )}
+            
             {unrankedImages.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Uploaded Images</h2>
-                <p className="text-sm text-muted-foreground">Click an image to add it to your ranking</p>
+                <p className="text-l text-muted-foreground">Click an image to add it to your ranking</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {unrankedImages.map((image) => (
                     <div
@@ -122,19 +136,6 @@ const Index = () => {
               </div>
             )}
 
-            {rankedImages.length > 0 && (
-              <div ref={exportRef} className="bg-background p-6 rounded-lg space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-foreground">Your Ranking</h2>
-                  <p className="text-sm text-muted-foreground">Click ranked images to remove them</p>
-                </div>
-                <RankingGrid 
-                  images={rankedImages} 
-                  onReorder={handleReorder}
-                  onImageClick={moveToUnranked}
-                />
-              </div>
-            )}
           </div>
         )}
       </div>
