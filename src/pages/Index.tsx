@@ -227,9 +227,21 @@ const Index = () => {
   }, [mode, tierOrder]);
 
   const moveToSpecificTier = useCallback((image: ImageItem, targetTier: string) => {
-    setUnrankedImages(prev => prev.filter(img => img.id !== image.id));
-    setTierData(prev => ({ ...prev, [targetTier]: [...(prev[targetTier] || []), image] }));
-  }, []);
+    console.log('moveToSpecificTier called with:', image.id, image.alt, 'to tier:', targetTier);
+    console.log('Current unrankedImages:', unrankedImages.map(img => ({ id: img.id, alt: img.alt })));
+    
+    setUnrankedImages(prev => {
+      const filtered = prev.filter(img => img.id !== image.id);
+      console.log('Filtered unranked images:', filtered.map(img => ({ id: img.id, alt: img.alt })));
+      return filtered;
+    });
+    
+    setTierData(prev => {
+      const newData = { ...prev, [targetTier]: [...(prev[targetTier] || []), image] };
+      console.log('Updated tier data for', targetTier, ':', newData[targetTier].map(img => ({ id: img.id, alt: img.alt })));
+      return newData;
+    });
+  }, [unrankedImages]);
 
   const moveToUnranked = useCallback((image: ImageItem) => {
     if (mode === 'ranking') {
