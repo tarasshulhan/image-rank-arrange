@@ -5,8 +5,7 @@ import RankingGrid from '@/components/RankingGrid';
 import TierList from '@/components/TierList';
 import ExportButton from '@/components/ExportButton';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { X, RectangleHorizontal, List, Grid3X3, Settings } from 'lucide-react';
+import { X, RectangleHorizontal, List, Grid3X3 } from 'lucide-react';
 
 interface ImageItem {
   id: string;
@@ -57,7 +56,6 @@ const Index = () => {
   });
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('wide');
   const [mode, setMode] = useState<AppMode>('ranking');
-  const [showTierCustomization, setShowTierCustomization] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const additionalUploadRef = useRef<HTMLInputElement>(null);
 
@@ -131,10 +129,6 @@ const Index = () => {
 
   const toggleMode = useCallback(() => {
     setMode(prev => prev === 'ranking' ? 'tierlist' : 'ranking');
-  }, []);
-
-  const toggleTierCustomization = useCallback(() => {
-    setShowTierCustomization(prev => !prev);
   }, []);
 
   const updateTierConfig = useCallback((tier: keyof TierConfigs, config: TierConfig) => {
@@ -260,17 +254,6 @@ const Index = () => {
                   {mode === 'ranking' ? <List size={16} /> : <Grid3X3 size={16} />}
                   {mode === 'ranking' ? 'Ranking' : 'Tier List'}
                 </Button>
-                {mode === 'tierlist' && (
-                  <Button
-                    variant="outline"
-                    onClick={toggleTierCustomization}
-                    className="flex items-center gap-2"
-                    aria-label="Customize tiers"
-                  >
-                    <Settings size={16} />
-                    Customize Tiers
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   onClick={toggleAspectRatio}
@@ -293,35 +276,6 @@ const Index = () => {
                 <ExportButton targetRef={exportRef} filename={mode === 'ranking' ? 'my-ranking' : 'my-tierlist'} />
               )}
             </div>
-
-            {mode === 'tierlist' && showTierCustomization && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-                <h3 className="text-lg font-semibold text-foreground">Customize Tiers</h3>
-                <div className="space-y-3">
-                  {Object.entries(tierConfigs).map(([tier, config]) => (
-                    <div key={tier} className="flex items-center gap-4">
-                      <div className="w-12 text-center font-bold">{tier}:</div>
-                      <Input
-                        value={config.name}
-                        onChange={(e) => updateTierConfig(tier as keyof TierConfigs, { ...config, name: e.target.value })}
-                        className="flex-1 max-w-xs"
-                        placeholder="Tier name"
-                      />
-                      <div className="flex gap-2">
-                        {['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-gray-500'].map((color) => (
-                          <button
-                            key={color}
-                            className={`w-8 h-8 rounded-full border-2 ${color} ${config.color === color ? 'border-foreground' : 'border-muted'}`}
-                            onClick={() => updateTierConfig(tier as keyof TierConfigs, { ...config, color })}
-                            aria-label={`Set tier color to ${color}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {mode === 'ranking' && rankedImages.length > 0 && (
               <div className="space-y-4">
@@ -347,6 +301,7 @@ const Index = () => {
                     tierData={tierData}
                     tierConfigs={tierConfigs}
                     onTierUpdate={handleTierUpdate}
+                    onTierConfigUpdate={updateTierConfig}
                     onImageClick={moveToUnranked}
                     aspectRatio={aspectRatio}
                   />

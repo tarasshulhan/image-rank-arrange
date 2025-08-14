@@ -1,4 +1,6 @@
 import React, { useState, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface ImageItem {
   id: string;
@@ -31,12 +33,15 @@ interface TierListProps {
   tierData: TierData;
   tierConfigs: TierConfigs;
   onTierUpdate: (newTierData: TierData) => void;
+  onTierConfigUpdate: (tier: keyof TierConfigs, config: TierConfig) => void;
   onImageClick?: (image: ImageItem) => void;
   aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
-const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate, onImageClick, aspectRatio }) => {
+const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate, onTierConfigUpdate, onImageClick, aspectRatio }) => {
   const [draggedImage, setDraggedImage] = useState<{ image: ImageItem; sourceTier: keyof TierData } | null>(null);
+  const [editingTier, setEditingTier] = useState<keyof TierData | null>(null);
+  const [tempTierName, setTempTierName] = useState('');
 
   const tierLabels: Array<keyof TierData> = ['S', 'A', 'B', 'C', 'D'];
 
@@ -88,18 +93,83 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
   }, []);
 
   const handleImageClick = useCallback((image: ImageItem) => {
-    if (onImageClick && !draggedImage) {
+    if (onImageClick && !draggedImage && !editingTier) {
       onImageClick(image);
     }
-  }, [onImageClick, draggedImage]);
+  }, [onImageClick, draggedImage, editingTier]);
+
+  const handleTierClick = useCallback((tier: keyof TierData) => {
+    if (!draggedImage) {
+      setEditingTier(tier);
+      setTempTierName(tierConfigs[tier].name);
+    }
+  }, [draggedImage, tierConfigs]);
+
+  const handleTierNameChange = useCallback((value: string) => {
+    setTempTierName(value);
+  }, []);
+
+  const handleTierNameSave = useCallback(() => {
+    if (editingTier && tempTierName.trim()) {
+      onTierConfigUpdate(editingTier, { ...tierConfigs[editingTier], name: tempTierName.trim() });
+    }
+    setEditingTier(null);
+    setTempTierName('');
+  }, [editingTier, tempTierName, onTierConfigUpdate, tierConfigs]);
+
+  const handleTierNameCancel = useCallback(() => {
+    setEditingTier(null);
+    setTempTierName('');
+  }, []);
+
+  const handleColorChange = useCallback((tier: keyof TierData, color: string) => {
+    onTierConfigUpdate(tier, { ...tierConfigs[tier], color });
+  }, [onTierConfigUpdate, tierConfigs]);
 
   return (
     <div className="space-y-4">
       {tierLabels.map((tier) => (
         <div key={tier} className="flex gap-4">
-          <div className={`${tierConfigs[tier].color} text-white font-bold text-lg w-20 h-20 flex flex-col items-center justify-center rounded-lg flex-shrink-0`}>
-            <div className="text-xs opacity-75">{tier}</div>
-            <div className="text-sm font-semibold truncate w-full text-center px-1">{tierConfigs[tier].name}</div>
+          <div className="flex flex-col gap-2">
+            <div 
+              className={`${tierConfigs[tier].color} text-white font-bold text-lg w-20 h-20 flex flex-col items-center justify-center rounded-lg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+              onClick={() => handleTierClick(tier)}
+            >
+              {tierConfigs[tier].name === tier ? (
+                <div className="text-2xl">{tier}</div>
+              ) : (
+                <div className="text-sm font-semibold truncate w-full text-center px-1">{tierConfigs[tier].name}</div>
+              )}
+            </div>
+            {editingTier === tier && (
+              <div className="w-20 space-y-2">
+                <Input
+                  value={tempTierName}
+                  onChange={(e) => handleTierNameChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleTierNameSave();
+                    if (e.key === 'Escape') handleTierNameCancel();
+                  }}
+                  className="text-xs h-8"
+                  placeholder="Name"
+                  autoFocus
+                />
+                <div className="flex flex-wrap gap-1">
+                  {['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-gray-500'].map((color) => (
+                    <button
+                      key={color}
+                      className={`w-4 h-4 rounded-full border ${color} ${tierConfigs[tier].color === color ? 'border-white border-2' : 'border-gray-300'}`}
+                      onClick={() => handleColorChange(tier, color)}
+                      aria-label={`Set tier color to ${color}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  <Button size="sm" className="text-xs h-6 px-2" onClick={handleTierNameSave}>Save</Button>
+                  <Button size="sm" variant="outline" className="text-xs h-6 px-2" onClick={handleTierNameCancel}>Cancel</Button>
+                </div>
+              </div>
+            )}
           </div>
           <div
             className="flex-1 min-h-[80px] border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 transition-colors hover:border-muted-foreground/50"
