@@ -4,7 +4,7 @@ import ImageUploader from '@/components/ImageUploader';
 import RankingGrid from '@/components/RankingGrid';
 import ExportButton from '@/components/ExportButton';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, RectangleHorizontal } from 'lucide-react';
 
 interface ImageItem {
   id: string;
@@ -12,9 +12,12 @@ interface ImageItem {
   alt: string;
 }
 
+type AspectRatio = 'wide' | 'square' | 'vertical';
+
 const Index = () => {
   const [unrankedImages, setUnrankedImages] = useState<ImageItem[]>([]);
   const [rankedImages, setRankedImages] = useState<ImageItem[]>([]);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('wide');
   const exportRef = useRef<HTMLDivElement>(null);
   const additionalUploadRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +51,26 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('ranking-app-ranked', JSON.stringify(rankedImages));
   }, [rankedImages]);
+
+  const toggleAspectRatio = useCallback(() => {
+    setAspectRatio(prev => {
+      switch (prev) {
+        case 'wide': return 'square';
+        case 'square': return 'vertical';
+        case 'vertical': return 'wide';
+        default: return 'wide';
+      }
+    });
+  }, []);
+
+  const getAspectRatioClass = (ratio: AspectRatio) => {
+    switch (ratio) {
+      case 'wide': return 'aspect-video';
+      case 'square': return 'aspect-square';
+      case 'vertical': return 'aspect-[3/4]';
+      default: return 'aspect-video';
+    }
+  };
 
   const handleImagesUpload = useCallback((files: File[]) => {
     const newImages: ImageItem[] = files.map((file) => ({
@@ -97,7 +120,7 @@ const Index = () => {
         {allImages.length === 0 ? (
           <ImageUploader onImagesUpload={handleImagesUpload} />
         ) : (
-          <div className="space-y-8">
+            <div className="space-y-8">
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
                 <input
@@ -125,6 +148,15 @@ const Index = () => {
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={toggleAspectRatio}
+                  className="flex items-center gap-2"
+                  aria-label={`Current: ${aspectRatio}. Click to change aspect ratio`}
+                >
+                  <RectangleHorizontal size={16} />
+                  {aspectRatio === 'wide' ? 'Wide' : aspectRatio === 'square' ? 'Square' : 'Vertical'}
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={clearAll}
                   className="flex items-center gap-2 text-destructive hover:text-destructive"
                 >
@@ -146,6 +178,7 @@ const Index = () => {
                     images={rankedImages} 
                     onReorder={handleReorder}
                     onImageClick={moveToUnranked}
+                    aspectRatio={aspectRatio}
                   />
                 </div>
               </div>
@@ -160,7 +193,7 @@ const Index = () => {
                     <div
                       key={image.id}
                       onClick={() => moveToRanking(image)}
-                      className="aspect-video bg-muted rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg"
+                      className={`${getAspectRatioClass(aspectRatio)} bg-muted rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg`}
                     >
                       <img
                         src={image.src}

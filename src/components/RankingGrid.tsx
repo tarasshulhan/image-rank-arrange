@@ -12,9 +12,10 @@ interface RankingGridProps {
   images: ImageItem[];
   onReorder: (newOrder: ImageItem[]) => void;
   onImageClick?: (image: ImageItem) => void;
+  aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
-const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder, onImageClick }) => {
+const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder, onImageClick, aspectRatio }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleDragStart = useCallback((index: number) => (e: React.DragEvent<HTMLDivElement>) => {
@@ -75,6 +76,7 @@ const RankingGrid: React.FC<RankingGridProps> = ({ images, onReorder, onImageCli
             onDrop={handleDrop(index)}
             onImageClick={() => handleImageClick(index)}
             isDragging={draggedIndex === index}
+            aspectRatio={aspectRatio}
           />
         </div>
       ))}

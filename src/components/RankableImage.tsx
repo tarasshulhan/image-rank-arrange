@@ -10,6 +10,7 @@ interface RankableImageProps {
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   onImageClick?: () => void;
   isDragging: boolean;
+  aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
 const RankableImage: React.FC<RankableImageProps> = ({
@@ -20,7 +21,8 @@ const RankableImage: React.FC<RankableImageProps> = ({
   onDragOver,
   onDrop,
   onImageClick,
-  isDragging
+  isDragging,
+  aspectRatio
 }) => {
   const getRankSuffix = (rank: number): string => {
     if (rank % 100 >= 11 && rank % 100 <= 13) {
@@ -31,6 +33,15 @@ const RankableImage: React.FC<RankableImageProps> = ({
       case 2: return 'nd';
       case 3: return 'rd';
       default: return 'th';
+    }
+  };
+
+  const getAspectRatioClass = (ratio: 'wide' | 'square' | 'vertical') => {
+    switch (ratio) {
+      case 'wide': return 'aspect-video';
+      case 'square': return 'aspect-square';
+      case 'vertical': return 'aspect-[3/4]';
+      default: return 'aspect-video';
     }
   };
 
@@ -55,7 +66,7 @@ const RankableImage: React.FC<RankableImageProps> = ({
         ${onImageClick ? 'cursor-pointer' : 'cursor-move'}
       `}
     >
-      <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+      <div className={`${getAspectRatioClass(aspectRatio)} bg-muted rounded-lg overflow-hidden`}>
         <img
           src={src}
           alt={alt}
