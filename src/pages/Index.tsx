@@ -2,9 +2,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import RankingGrid from '@/components/RankingGrid';
+import TierList from '@/components/TierList';
 import ExportButton from '@/components/ExportButton';
 import { Button } from '@/components/ui/button';
-import { X, RectangleHorizontal } from 'lucide-react';
+import { X, RectangleHorizontal, List, Grid3X3 } from 'lucide-react';
 
 interface ImageItem {
   id: string;
@@ -12,12 +13,29 @@ interface ImageItem {
   alt: string;
 }
 
+interface TierData {
+  S: ImageItem[];
+  A: ImageItem[];
+  B: ImageItem[];
+  C: ImageItem[];
+  D: ImageItem[];
+}
+
 type AspectRatio = 'wide' | 'square' | 'vertical';
+type AppMode = 'ranking' | 'tierlist';
 
 const Index = () => {
   const [unrankedImages, setUnrankedImages] = useState<ImageItem[]>([]);
   const [rankedImages, setRankedImages] = useState<ImageItem[]>([]);
+  const [tierData, setTierData] = useState<TierData>({
+    S: [],
+    A: [],
+    B: [],
+    C: [],
+    D: []
+  });
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('wide');
+  const [mode, setMode] = useState<AppMode>('ranking');
   const exportRef = useRef<HTMLDivElement>(null);
   const additionalUploadRef = useRef<HTMLInputElement>(null);
 
@@ -25,6 +43,7 @@ const Index = () => {
   useEffect(() => {
     const savedUnranked = localStorage.getItem('ranking-app-unranked');
     const savedRanked = localStorage.getItem('ranking-app-ranked');
+    const savedTierData = localStorage.getItem('ranking-app-tierdata');
     
     if (savedUnranked) {
       try {
@@ -41,6 +60,14 @@ const Index = () => {
         console.error('Error loading ranked images:', error);
       }
     }
+    
+    if (savedTierData) {
+      try {
+        setTierData(JSON.parse(savedTierData));
+      } catch (error) {
+        console.error('Error loading tier data:', error);
+      }
+    }
   }, []);
 
   // Save to localStorage whenever images change
@@ -52,6 +79,10 @@ const Index = () => {
     localStorage.setItem('ranking-app-ranked', JSON.stringify(rankedImages));
   }, [rankedImages]);
 
+  useEffect(() => {
+    localStorage.setItem('ranking-app-tierdata', JSON.stringify(tierData));
+  }, [tierData]);
+
   const toggleAspectRatio = useCallback(() => {
     setAspectRatio(prev => {
       switch (prev) {
@@ -61,6 +92,10 @@ const Index = () => {
         default: return 'wide';
       }
     });
+  }, []);
+
+  const toggleMode = useCallback(() => {
+    setMode(prev => prev === 'ranking' ? 'tierlist' : 'ranking');
   }, []);
 
   const getAspectRatioClass = (ratio: AspectRatio) => {
@@ -86,29 +121,52 @@ const Index = () => {
     setRankedImages(newOrder);
   }, []);
 
-  const moveToRanking = useCallback((image: ImageItem) => {
-    setUnrankedImages(prev => prev.filter(img => img.id !== image.id));
-    setRankedImages(prev => [...prev, image]);
+  const handleTierUpdate = useCallback((newTierData: TierData) => {
+    setTierData(newTierData);
   }, []);
 
+  const moveToRanking = useCallback((image: ImageItem) => {
+    setUnrankedImages(prev => prev.filter(img => img.id !== image.id));
+    if (mode === 'ranking') {
+      setRankedImages(prev => [...prev, image]);
+    } else {
+      setTierData(prev => ({ ...prev, S: [...prev.S, image] }));
+    }
+  }, [mode]);
+
   const moveToUnranked = useCallback((image: ImageItem) => {
-    setRankedImages(prev => prev.filter(img => img.id !== image.id));
+    if (mode === 'ranking') {
+      setRankedImages(prev => prev.filter(img => img.id !== image.id));
+    } else {
+      // Remove from all tiers
+      setTierData(prev => ({
+        S: prev.S.filter(img => img.id !== image.id),
+        A: prev.A.filter(img => img.id !== image.id),
+        B: prev.B.filter(img => img.id !== image.id),
+        C: prev.C.filter(img => img.id !== image.id),
+        D: prev.D.filter(img => img.id !== image.id),
+      }));
+    }
     setUnrankedImages(prev => [...prev, image]);
-  }, []);
+  }, [mode]);
 
   const clearAll = useCallback(() => {
     // Clean up object URLs to prevent memory leaks
-    [...unrankedImages, ...rankedImages].forEach(image => {
+    const allTierImages = Object.values(tierData).flat();
+    [...unrankedImages, ...rankedImages, ...allTierImages].forEach(image => {
       URL.revokeObjectURL(image.src);
     });
     setUnrankedImages([]);
     setRankedImages([]);
+    setTierData({ S: [], A: [], B: [], C: [], D: [] });
     // Clear localStorage
     localStorage.removeItem('ranking-app-unranked');
     localStorage.removeItem('ranking-app-ranked');
-  }, [unrankedImages, rankedImages]);
+    localStorage.removeItem('ranking-app-tierdata');
+  }, [unrankedImages, rankedImages, tierData]);
 
-  const allImages = [...unrankedImages, ...rankedImages];
+  const allTierImages = Object.values(tierData).flat();
+  const allImages = [...unrankedImages, ...rankedImages, ...allTierImages];
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -148,6 +206,15 @@ const Index = () => {
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={toggleMode}
+                  className="flex items-center gap-2"
+                  aria-label={`Current mode: ${mode}. Click to switch mode`}
+                >
+                  {mode === 'ranking' ? <List size={16} /> : <Grid3X3 size={16} />}
+                  {mode === 'ranking' ? 'Ranking' : 'Tier List'}
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={toggleAspectRatio}
                   className="flex items-center gap-2"
                   aria-label={`Current: ${aspectRatio}. Click to change aspect ratio`}
@@ -164,12 +231,12 @@ const Index = () => {
                   Clear All
                 </Button>
               </div>
-              {rankedImages.length > 0 && (
-                <ExportButton targetRef={exportRef} filename="my-ranking" />
+              {((mode === 'ranking' && rankedImages.length > 0) || (mode === 'tierlist' && allTierImages.length > 0)) && (
+                <ExportButton targetRef={exportRef} filename={mode === 'ranking' ? 'my-ranking' : 'my-tierlist'} />
               )}
             </div>
 
-            {rankedImages.length > 0 && (
+            {mode === 'ranking' && rankedImages.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Your Rankings</h2>
                 <p className="text-l text-muted-foreground">Click ranked images to remove them & drag to reorder</p>
@@ -183,11 +250,26 @@ const Index = () => {
                 </div>
               </div>
             )}
+
+            {mode === 'tierlist' && allTierImages.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-foreground">Your Tier List</h2>
+                <p className="text-l text-muted-foreground">Drag images between tiers & click to remove them</p>
+                <div ref={exportRef}>
+                  <TierList 
+                    tierData={tierData}
+                    onTierUpdate={handleTierUpdate}
+                    onImageClick={moveToUnranked}
+                    aspectRatio={aspectRatio}
+                  />
+                </div>
+              </div>
+            )}
             
             {unrankedImages.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Uploaded Images</h2>
-                <p className="text-l text-muted-foreground">Click an image to add it to your ranking</p>
+                <p className="text-l text-muted-foreground">Click an image to add it to your {mode === 'ranking' ? 'ranking' : 'tier list'}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {unrankedImages.map((image) => (
                     <div
