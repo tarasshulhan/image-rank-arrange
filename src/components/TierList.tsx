@@ -75,10 +75,14 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, u
     
     if (source === 'unranked' && imageId) {
       // Moving from unranked to tier
+      console.log('Looking for imageId:', imageId, 'in unrankedImages:', unrankedImages.map(img => ({ id: img.id, alt: img.alt })));
       const image = unrankedImages.find(img => img.id === imageId);
       console.log('Found image:', image);
       if (image && onImageMoveToTier) {
+        console.log('Calling onImageMoveToTier with:', image.id, targetTier);
         onImageMoveToTier(image, targetTier);
+      } else {
+        console.log('Image not found or onImageMoveToTier not available');
       }
       return;
     }
