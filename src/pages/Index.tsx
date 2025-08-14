@@ -160,7 +160,7 @@ const Index = () => {
                     <div
                       key={image.id}
                       onClick={() => moveToRanking(image)}
-                      className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg"
+                      className="aspect-video bg-muted rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg"
                     >
                       <img
                         src={image.src}
