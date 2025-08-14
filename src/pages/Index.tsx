@@ -14,11 +14,7 @@ interface ImageItem {
 }
 
 interface TierData {
-  S: ImageItem[];
-  A: ImageItem[];
-  B: ImageItem[];
-  C: ImageItem[];
-  D: ImageItem[];
+  [key: string]: ImageItem[];
 }
 
 interface TierConfig {
@@ -27,11 +23,7 @@ interface TierConfig {
 }
 
 interface TierConfigs {
-  S: TierConfig;
-  A: TierConfig;
-  B: TierConfig;
-  C: TierConfig;
-  D: TierConfig;
+  [key: string]: TierConfig;
 }
 
 type AspectRatio = 'wide' | 'square' | 'vertical';
@@ -41,19 +33,20 @@ const Index = () => {
   const [unrankedImages, setUnrankedImages] = useState<ImageItem[]>([]);
   const [rankedImages, setRankedImages] = useState<ImageItem[]>([]);
   const [tierData, setTierData] = useState<TierData>({
-    S: [],
-    A: [],
-    B: [],
-    C: [],
-    D: []
+    'tier-1': [],
+    'tier-2': [],
+    'tier-3': [],
+    'tier-4': [],
+    'tier-5': []
   });
   const [tierConfigs, setTierConfigs] = useState<TierConfigs>({
-    S: { name: 'S', color: 'bg-red-500' },
-    A: { name: 'A', color: 'bg-orange-500' },
-    B: { name: 'B', color: 'bg-yellow-500' },
-    C: { name: 'C', color: 'bg-green-500' },
-    D: { name: 'D', color: 'bg-blue-500' }
+    'tier-1': { name: 'S', color: 'bg-red-500' },
+    'tier-2': { name: 'A', color: 'bg-orange-500' },
+    'tier-3': { name: 'B', color: 'bg-yellow-500' },
+    'tier-4': { name: 'C', color: 'bg-green-500' },
+    'tier-5': { name: 'D', color: 'bg-blue-500' }
   });
+  const [tierOrder, setTierOrder] = useState<string[]>(['tier-1', 'tier-2', 'tier-3', 'tier-4', 'tier-5']);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('wide');
   const [mode, setMode] = useState<AppMode>('ranking');
   const exportRef = useRef<HTMLDivElement>(null);
@@ -65,6 +58,7 @@ const Index = () => {
     const savedRanked = localStorage.getItem('ranking-app-ranked');
     const savedTierData = localStorage.getItem('ranking-app-tierdata');
     const savedTierConfigs = localStorage.getItem('ranking-app-tierconfigs');
+    const savedTierOrder = localStorage.getItem('ranking-app-tierorder');
     
     if (savedUnranked) {
       try {
@@ -97,6 +91,14 @@ const Index = () => {
         console.error('Error loading tier configs:', error);
       }
     }
+    
+    if (savedTierOrder) {
+      try {
+        setTierOrder(JSON.parse(savedTierOrder));
+      } catch (error) {
+        console.error('Error loading tier order:', error);
+      }
+    }
   }, []);
 
   // Save to localStorage whenever images change
@@ -116,6 +118,10 @@ const Index = () => {
     localStorage.setItem('ranking-app-tierconfigs', JSON.stringify(tierConfigs));
   }, [tierConfigs]);
 
+  useEffect(() => {
+    localStorage.setItem('ranking-app-tierorder', JSON.stringify(tierOrder));
+  }, [tierOrder]);
+
   const toggleAspectRatio = useCallback(() => {
     setAspectRatio(prev => {
       switch (prev) {
@@ -131,12 +137,54 @@ const Index = () => {
     setMode(prev => prev === 'ranking' ? 'tierlist' : 'ranking');
   }, []);
 
-  const updateTierConfig = useCallback((tier: keyof TierConfigs, config: TierConfig) => {
+  const updateTierConfig = useCallback((tier: string, config: TierConfig) => {
     setTierConfigs(prev => ({
       ...prev,
       [tier]: config
     }));
   }, []);
+
+  const addTier = useCallback(() => {
+    const newTierId = `tier-${Date.now()}`;
+    const newTierName = String.fromCharCode(65 + tierOrder.length); // A, B, C, etc.
+    const colors = [
+      'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 
+      'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-gray-500',
+      'bg-cyan-500', 'bg-lime-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500'
+    ];
+    const newColor = colors[tierOrder.length % colors.length];
+    
+    setTierOrder(prev => [...prev, newTierId]);
+    setTierConfigs(prev => ({
+      ...prev,
+      [newTierId]: { name: newTierName, color: newColor }
+    }));
+    setTierData(prev => ({
+      ...prev,
+      [newTierId]: []
+    }));
+  }, [tierOrder]);
+
+  const removeTier = useCallback((tierId: string) => {
+    if (tierOrder.length <= 2) return; // Minimum 2 tiers
+    
+    // Move images from removed tier to unranked
+    const imagesInTier = tierData[tierId] || [];
+    setUnrankedImages(prev => [...prev, ...imagesInTier]);
+    
+    // Remove from order, configs, and data
+    setTierOrder(prev => prev.filter(id => id !== tierId));
+    setTierConfigs(prev => {
+      const newConfigs = { ...prev };
+      delete newConfigs[tierId];
+      return newConfigs;
+    });
+    setTierData(prev => {
+      const newData = { ...prev };
+      delete newData[tierId];
+      return newData;
+    });
+  }, [tierOrder, tierData]);
 
   const getAspectRatioClass = (ratio: AspectRatio) => {
     switch (ratio) {
@@ -170,25 +218,29 @@ const Index = () => {
     if (mode === 'ranking') {
       setRankedImages(prev => [...prev, image]);
     } else {
-      setTierData(prev => ({ ...prev, S: [...prev.S, image] }));
+      // Add to first tier
+      const firstTier = tierOrder[0];
+      if (firstTier) {
+        setTierData(prev => ({ ...prev, [firstTier]: [...(prev[firstTier] || []), image] }));
+      }
     }
-  }, [mode]);
+  }, [mode, tierOrder]);
 
   const moveToUnranked = useCallback((image: ImageItem) => {
     if (mode === 'ranking') {
       setRankedImages(prev => prev.filter(img => img.id !== image.id));
     } else {
       // Remove from all tiers
-      setTierData(prev => ({
-        S: prev.S.filter(img => img.id !== image.id),
-        A: prev.A.filter(img => img.id !== image.id),
-        B: prev.B.filter(img => img.id !== image.id),
-        C: prev.C.filter(img => img.id !== image.id),
-        D: prev.D.filter(img => img.id !== image.id),
-      }));
+      setTierData(prev => {
+        const newData = { ...prev };
+        for (const tierId of tierOrder) {
+          newData[tierId] = (newData[tierId] || []).filter(img => img.id !== image.id);
+        }
+        return newData;
+      });
     }
     setUnrankedImages(prev => [...prev, image]);
-  }, [mode]);
+  }, [mode, tierOrder]);
 
   const clearAll = useCallback(() => {
     // Clean up object URLs to prevent memory leaks
@@ -198,12 +250,29 @@ const Index = () => {
     });
     setUnrankedImages([]);
     setRankedImages([]);
-    setTierData({ S: [], A: [], B: [], C: [], D: [] });
+    
+    // Reset to default tiers
+    const defaultTierData: TierData = {};
+    const defaultTierOrder = ['tier-1', 'tier-2', 'tier-3', 'tier-4', 'tier-5'];
+    defaultTierOrder.forEach(tierId => {
+      defaultTierData[tierId] = [];
+    });
+    setTierData(defaultTierData);
+    setTierOrder(defaultTierOrder);
+    setTierConfigs({
+      'tier-1': { name: 'S', color: 'bg-red-500' },
+      'tier-2': { name: 'A', color: 'bg-orange-500' },
+      'tier-3': { name: 'B', color: 'bg-yellow-500' },
+      'tier-4': { name: 'C', color: 'bg-green-500' },
+      'tier-5': { name: 'D', color: 'bg-blue-500' }
+    });
+    
     // Clear localStorage
     localStorage.removeItem('ranking-app-unranked');
     localStorage.removeItem('ranking-app-ranked');
     localStorage.removeItem('ranking-app-tierdata');
     localStorage.removeItem('ranking-app-tierconfigs');
+    localStorage.removeItem('ranking-app-tierorder');
   }, [unrankedImages, rankedImages, tierData]);
 
   const allTierImages = Object.values(tierData).flat();
@@ -294,14 +363,25 @@ const Index = () => {
 
             {mode === 'tierlist' && allTierImages.length > 0 && (
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-foreground">Your Tier List</h2>
-                <p className="text-l text-muted-foreground">Drag images between tiers & click to remove them</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">Your Tier List</h2>
+                    <p className="text-l text-muted-foreground">Drag images between tiers & click to remove them</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={addTier} variant="outline" size="sm">
+                      Add Tier
+                    </Button>
+                  </div>
+                </div>
                 <div ref={exportRef}>
                   <TierList 
                     tierData={tierData}
                     tierConfigs={tierConfigs}
+                    tierOrder={tierOrder}
                     onTierUpdate={handleTierUpdate}
                     onTierConfigUpdate={updateTierConfig}
+                    onTierRemove={removeTier}
                     onImageClick={moveToUnranked}
                     aspectRatio={aspectRatio}
                   />

@@ -9,11 +9,7 @@ interface ImageItem {
 }
 
 interface TierData {
-  S: ImageItem[];
-  A: ImageItem[];
-  B: ImageItem[];
-  C: ImageItem[];
-  D: ImageItem[];
+  [key: string]: ImageItem[];
 }
 
 interface TierConfig {
@@ -22,28 +18,31 @@ interface TierConfig {
 }
 
 interface TierConfigs {
-  S: TierConfig;
-  A: TierConfig;
-  B: TierConfig;
-  C: TierConfig;
-  D: TierConfig;
+  [key: string]: TierConfig;
 }
 
 interface TierListProps {
   tierData: TierData;
   tierConfigs: TierConfigs;
+  tierOrder: string[];
   onTierUpdate: (newTierData: TierData) => void;
-  onTierConfigUpdate: (tier: keyof TierConfigs, config: TierConfig) => void;
+  onTierConfigUpdate: (tier: string, config: TierConfig) => void;
+  onTierRemove: (tier: string) => void;
   onImageClick?: (image: ImageItem) => void;
   aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
-const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate, onTierConfigUpdate, onImageClick, aspectRatio }) => {
-  const [draggedImage, setDraggedImage] = useState<{ image: ImageItem; sourceTier: keyof TierData } | null>(null);
-  const [editingTier, setEditingTier] = useState<keyof TierData | null>(null);
+const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, onTierUpdate, onTierConfigUpdate, onTierRemove, onImageClick, aspectRatio }) => {
+  const [draggedImage, setDraggedImage] = useState<{ image: ImageItem; sourceTier: string } | null>(null);
+  const [editingTier, setEditingTier] = useState<string | null>(null);
   const [tempTierName, setTempTierName] = useState('');
 
-  const tierLabels: Array<keyof TierData> = ['S', 'A', 'B', 'C', 'D'];
+  const availableColors = [
+    'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-gray-500',
+    'bg-cyan-500', 'bg-lime-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500',
+    'bg-rose-500', 'bg-sky-500', 'bg-slate-500', 'bg-zinc-500', 'bg-neutral-500'
+  ];
 
   const getAspectRatioClass = (ratio: 'wide' | 'square' | 'vertical') => {
     switch (ratio) {
@@ -54,7 +53,7 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
     }
   };
 
-  const handleDragStart = useCallback((image: ImageItem, sourceTier: keyof TierData) => (e: React.DragEvent) => {
+  const handleDragStart = useCallback((image: ImageItem, sourceTier: string) => (e: React.DragEvent) => {
     setDraggedImage({ image, sourceTier });
     e.dataTransfer.effectAllowed = 'move';
   }, []);
@@ -64,7 +63,7 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
     e.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const handleDrop = useCallback((targetTier: keyof TierData) => (e: React.DragEvent) => {
+  const handleDrop = useCallback((targetTier: string) => (e: React.DragEvent) => {
     e.preventDefault();
     
     if (!draggedImage) return;
@@ -79,10 +78,10 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
     const newTierData = { ...tierData };
     
     // Remove from source tier
-    newTierData[sourceTier] = newTierData[sourceTier].filter(img => img.id !== image.id);
+    newTierData[sourceTier] = (newTierData[sourceTier] || []).filter(img => img.id !== image.id);
     
     // Add to target tier
-    newTierData[targetTier] = [...newTierData[targetTier], image];
+    newTierData[targetTier] = [...(newTierData[targetTier] || []), image];
     
     onTierUpdate(newTierData);
     setDraggedImage(null);
@@ -98,7 +97,7 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
     }
   }, [onImageClick, draggedImage, editingTier]);
 
-  const handleTierClick = useCallback((tier: keyof TierData) => {
+  const handleTierClick = useCallback((tier: string) => {
     if (!draggedImage) {
       setEditingTier(tier);
       setTempTierName(tierConfigs[tier].name);
@@ -122,23 +121,35 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
     setTempTierName('');
   }, []);
 
-  const handleColorChange = useCallback((tier: keyof TierData, color: string) => {
+  const handleColorChange = useCallback((tier: string, color: string) => {
     onTierConfigUpdate(tier, { ...tierConfigs[tier], color });
   }, [onTierConfigUpdate, tierConfigs]);
 
   return (
     <div className="space-y-4">
-      {tierLabels.map((tier) => (
+      {tierOrder.map((tier) => (
         <div key={tier} className="flex gap-4">
           <div className="flex flex-col gap-2">
-            <div 
-              className={`${tierConfigs[tier].color} text-white font-bold text-lg w-20 h-20 flex flex-col items-center justify-center rounded-lg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
-              onClick={() => handleTierClick(tier)}
-            >
-              {tierConfigs[tier].name === tier ? (
-                <div className="text-2xl">{tier}</div>
-              ) : (
-                <div className="text-sm font-semibold truncate w-full text-center px-1">{tierConfigs[tier].name}</div>
+            <div className="flex items-center gap-2">
+              <div 
+                className={`${tierConfigs[tier]?.color || 'bg-gray-500'} text-white font-bold text-lg w-20 h-20 flex flex-col items-center justify-center rounded-lg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+                onClick={() => handleTierClick(tier)}
+              >
+                {tierConfigs[tier]?.name === tier.split('-')[0].toUpperCase() ? (
+                  <div className="text-2xl">{tierConfigs[tier]?.name}</div>
+                ) : (
+                  <div className="text-sm font-semibold truncate w-full text-center px-1">{tierConfigs[tier]?.name}</div>
+                )}
+              </div>
+              {tierOrder.length > 2 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onTierRemove(tier)}
+                  className="h-8 w-8 p-0"
+                >
+                  ×
+                </Button>
               )}
             </div>
             {editingTier === tier && (
@@ -155,10 +166,10 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
                   autoFocus
                 />
                 <div className="flex flex-wrap gap-1">
-                  {['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-gray-500'].map((color) => (
+                  {availableColors.map((color) => (
                     <button
                       key={color}
-                      className={`w-4 h-4 rounded-full border ${color} ${tierConfigs[tier].color === color ? 'border-white border-2' : 'border-gray-300'}`}
+                      className={`w-4 h-4 rounded-full border ${color} ${tierConfigs[tier]?.color === color ? 'border-white border-2' : 'border-gray-300'}`}
                       onClick={() => handleColorChange(tier, color)}
                       aria-label={`Set tier color to ${color}`}
                     />
@@ -177,7 +188,7 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
             onDrop={handleDrop(tier)}
           >
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-              {tierData[tier].map((image) => (
+              {(tierData[tier] || []).map((image) => (
                 <div
                   key={image.id}
                   draggable
@@ -200,9 +211,9 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate
                 </div>
               ))}
             </div>
-            {tierData[tier].length === 0 && (
+            {(tierData[tier] || []).length === 0 && (
               <div className="text-muted-foreground text-center py-8">
-                Drop images here for {tier} tier
+                Drop images here for {tierConfigs[tier]?.name || 'this tier'}
               </div>
             )}
           </div>
