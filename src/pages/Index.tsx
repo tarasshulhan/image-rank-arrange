@@ -234,20 +234,29 @@ const Index = () => {
     }
   }, [mode, tierOrder]);
 
-  const moveToSpecificTier = useCallback((image: ImageItem, targetTier: string) => {
-    console.log('moveToSpecificTier called with:', image.id, image.alt, 'to tier:', targetTier);
+  const moveToSpecificTier = useCallback((tempImage: ImageItem, targetTier: string) => {
+    console.log('moveToSpecificTier called with ID:', tempImage.id, 'to tier:', targetTier);
     
     setUnrankedImages(prev => {
       console.log('Current unrankedImages in setter:', prev.map(img => ({ id: img.id, alt: img.alt })));
-      const filtered = prev.filter(img => img.id !== image.id);
+      // Find the actual image by ID
+      const actualImage = prev.find(img => img.id === tempImage.id);
+      if (!actualImage) {
+        console.log('Image not found in unrankedImages!');
+        return prev;
+      }
+      
+      const filtered = prev.filter(img => img.id !== tempImage.id);
       console.log('Filtered unranked images:', filtered.map(img => ({ id: img.id, alt: img.alt })));
+      
+      // Update tier data with the actual image
+      setTierData(current => {
+        const newData = { ...current, [targetTier]: [...(current[targetTier] || []), actualImage] };
+        console.log('Updated tier data for', targetTier, ':', newData[targetTier].map(img => ({ id: img.id, alt: img.alt })));
+        return newData;
+      });
+      
       return filtered;
-    });
-    
-    setTierData(prev => {
-      const newData = { ...prev, [targetTier]: [...(prev[targetTier] || []), image] };
-      console.log('Updated tier data for', targetTier, ':', newData[targetTier].map(img => ({ id: img.id, alt: img.alt })));
-      return newData;
     });
   }, []);
 
