@@ -5,7 +5,8 @@ import RankingGrid from '@/components/RankingGrid';
 import TierList from '@/components/TierList';
 import ExportButton from '@/components/ExportButton';
 import { Button } from '@/components/ui/button';
-import { X, RectangleHorizontal, List, Grid3X3 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { X, RectangleHorizontal, List, Grid3X3, Settings } from 'lucide-react';
 
 interface ImageItem {
   id: string;
@@ -21,6 +22,19 @@ interface TierData {
   D: ImageItem[];
 }
 
+interface TierConfig {
+  name: string;
+  color: string;
+}
+
+interface TierConfigs {
+  S: TierConfig;
+  A: TierConfig;
+  B: TierConfig;
+  C: TierConfig;
+  D: TierConfig;
+}
+
 type AspectRatio = 'wide' | 'square' | 'vertical';
 type AppMode = 'ranking' | 'tierlist';
 
@@ -34,8 +48,16 @@ const Index = () => {
     C: [],
     D: []
   });
+  const [tierConfigs, setTierConfigs] = useState<TierConfigs>({
+    S: { name: 'S', color: 'bg-red-500' },
+    A: { name: 'A', color: 'bg-orange-500' },
+    B: { name: 'B', color: 'bg-yellow-500' },
+    C: { name: 'C', color: 'bg-green-500' },
+    D: { name: 'D', color: 'bg-blue-500' }
+  });
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('wide');
   const [mode, setMode] = useState<AppMode>('ranking');
+  const [showTierCustomization, setShowTierCustomization] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const additionalUploadRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +66,7 @@ const Index = () => {
     const savedUnranked = localStorage.getItem('ranking-app-unranked');
     const savedRanked = localStorage.getItem('ranking-app-ranked');
     const savedTierData = localStorage.getItem('ranking-app-tierdata');
+    const savedTierConfigs = localStorage.getItem('ranking-app-tierconfigs');
     
     if (savedUnranked) {
       try {
@@ -68,6 +91,14 @@ const Index = () => {
         console.error('Error loading tier data:', error);
       }
     }
+    
+    if (savedTierConfigs) {
+      try {
+        setTierConfigs(JSON.parse(savedTierConfigs));
+      } catch (error) {
+        console.error('Error loading tier configs:', error);
+      }
+    }
   }, []);
 
   // Save to localStorage whenever images change
@@ -83,6 +114,10 @@ const Index = () => {
     localStorage.setItem('ranking-app-tierdata', JSON.stringify(tierData));
   }, [tierData]);
 
+  useEffect(() => {
+    localStorage.setItem('ranking-app-tierconfigs', JSON.stringify(tierConfigs));
+  }, [tierConfigs]);
+
   const toggleAspectRatio = useCallback(() => {
     setAspectRatio(prev => {
       switch (prev) {
@@ -96,6 +131,17 @@ const Index = () => {
 
   const toggleMode = useCallback(() => {
     setMode(prev => prev === 'ranking' ? 'tierlist' : 'ranking');
+  }, []);
+
+  const toggleTierCustomization = useCallback(() => {
+    setShowTierCustomization(prev => !prev);
+  }, []);
+
+  const updateTierConfig = useCallback((tier: keyof TierConfigs, config: TierConfig) => {
+    setTierConfigs(prev => ({
+      ...prev,
+      [tier]: config
+    }));
   }, []);
 
   const getAspectRatioClass = (ratio: AspectRatio) => {
@@ -163,6 +209,7 @@ const Index = () => {
     localStorage.removeItem('ranking-app-unranked');
     localStorage.removeItem('ranking-app-ranked');
     localStorage.removeItem('ranking-app-tierdata');
+    localStorage.removeItem('ranking-app-tierconfigs');
   }, [unrankedImages, rankedImages, tierData]);
 
   const allTierImages = Object.values(tierData).flat();
@@ -213,6 +260,17 @@ const Index = () => {
                   {mode === 'ranking' ? <List size={16} /> : <Grid3X3 size={16} />}
                   {mode === 'ranking' ? 'Ranking' : 'Tier List'}
                 </Button>
+                {mode === 'tierlist' && (
+                  <Button
+                    variant="outline"
+                    onClick={toggleTierCustomization}
+                    className="flex items-center gap-2"
+                    aria-label="Customize tiers"
+                  >
+                    <Settings size={16} />
+                    Customize Tiers
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={toggleAspectRatio}
@@ -236,6 +294,35 @@ const Index = () => {
               )}
             </div>
 
+            {mode === 'tierlist' && showTierCustomization && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
+                <h3 className="text-lg font-semibold text-foreground">Customize Tiers</h3>
+                <div className="space-y-3">
+                  {Object.entries(tierConfigs).map(([tier, config]) => (
+                    <div key={tier} className="flex items-center gap-4">
+                      <div className="w-12 text-center font-bold">{tier}:</div>
+                      <Input
+                        value={config.name}
+                        onChange={(e) => updateTierConfig(tier as keyof TierConfigs, { ...config, name: e.target.value })}
+                        className="flex-1 max-w-xs"
+                        placeholder="Tier name"
+                      />
+                      <div className="flex gap-2">
+                        {['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-gray-500'].map((color) => (
+                          <button
+                            key={color}
+                            className={`w-8 h-8 rounded-full border-2 ${color} ${config.color === color ? 'border-foreground' : 'border-muted'}`}
+                            onClick={() => updateTierConfig(tier as keyof TierConfigs, { ...config, color })}
+                            aria-label={`Set tier color to ${color}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {mode === 'ranking' && rankedImages.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Your Rankings</h2>
@@ -258,6 +345,7 @@ const Index = () => {
                 <div ref={exportRef}>
                   <TierList 
                     tierData={tierData}
+                    tierConfigs={tierConfigs}
                     onTierUpdate={handleTierUpdate}
                     onImageClick={moveToUnranked}
                     aspectRatio={aspectRatio}

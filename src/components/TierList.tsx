@@ -14,24 +14,31 @@ interface TierData {
   D: ImageItem[];
 }
 
+interface TierConfig {
+  name: string;
+  color: string;
+}
+
+interface TierConfigs {
+  S: TierConfig;
+  A: TierConfig;
+  B: TierConfig;
+  C: TierConfig;
+  D: TierConfig;
+}
+
 interface TierListProps {
   tierData: TierData;
+  tierConfigs: TierConfigs;
   onTierUpdate: (newTierData: TierData) => void;
   onImageClick?: (image: ImageItem) => void;
   aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
-const TierList: React.FC<TierListProps> = ({ tierData, onTierUpdate, onImageClick, aspectRatio }) => {
+const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, onTierUpdate, onImageClick, aspectRatio }) => {
   const [draggedImage, setDraggedImage] = useState<{ image: ImageItem; sourceTier: keyof TierData } | null>(null);
 
   const tierLabels: Array<keyof TierData> = ['S', 'A', 'B', 'C', 'D'];
-  const tierColors = {
-    S: 'bg-red-500',
-    A: 'bg-orange-500', 
-    B: 'bg-yellow-500',
-    C: 'bg-green-500',
-    D: 'bg-blue-500'
-  };
 
   const getAspectRatioClass = (ratio: 'wide' | 'square' | 'vertical') => {
     switch (ratio) {
@@ -90,8 +97,9 @@ const TierList: React.FC<TierListProps> = ({ tierData, onTierUpdate, onImageClic
     <div className="space-y-4">
       {tierLabels.map((tier) => (
         <div key={tier} className="flex gap-4">
-          <div className={`${tierColors[tier]} text-white font-bold text-2xl w-20 h-20 flex items-center justify-center rounded-lg flex-shrink-0`}>
-            {tier}
+          <div className={`${tierConfigs[tier].color} text-white font-bold text-lg w-20 h-20 flex flex-col items-center justify-center rounded-lg flex-shrink-0`}>
+            <div className="text-xs opacity-75">{tier}</div>
+            <div className="text-sm font-semibold truncate w-full text-center px-1">{tierConfigs[tier].name}</div>
           </div>
           <div
             className="flex-1 min-h-[80px] border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 transition-colors hover:border-muted-foreground/50"
