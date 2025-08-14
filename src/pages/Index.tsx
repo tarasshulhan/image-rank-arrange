@@ -196,14 +196,22 @@ const Index = () => {
   };
 
   const handleImagesUpload = useCallback((files: File[]) => {
+    console.log('handleImagesUpload called in mode:', mode, 'with files:', files.length);
+    
     const newImages: ImageItem[] = files.map((file) => ({
       id: crypto.randomUUID(),
       src: URL.createObjectURL(file),
       alt: file.name
     }));
     
-    setUnrankedImages(prev => [...prev, ...newImages]);
-  }, []);
+    console.log('Created new images:', newImages.map(img => ({ id: img.id, alt: img.alt })));
+    
+    setUnrankedImages(prev => {
+      const updated = [...prev, ...newImages];
+      console.log('Updated unrankedImages:', updated.map(img => ({ id: img.id, alt: img.alt })));
+      return updated;
+    });
+  }, [mode]);
 
   const handleReorder = useCallback((newOrder: ImageItem[]) => {
     setRankedImages(newOrder);
