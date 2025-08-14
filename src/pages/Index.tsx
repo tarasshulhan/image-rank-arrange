@@ -226,6 +226,11 @@ const Index = () => {
     }
   }, [mode, tierOrder]);
 
+  const moveToSpecificTier = useCallback((image: ImageItem, targetTier: string) => {
+    setUnrankedImages(prev => prev.filter(img => img.id !== image.id));
+    setTierData(prev => ({ ...prev, [targetTier]: [...(prev[targetTier] || []), image] }));
+  }, []);
+
   const moveToUnranked = useCallback((image: ImageItem) => {
     if (mode === 'ranking') {
       setRankedImages(prev => prev.filter(img => img.id !== image.id));
@@ -384,7 +389,7 @@ const Index = () => {
                     onTierConfigUpdate={updateTierConfig}
                     onTierRemove={removeTier}
                     onImageClick={moveToUnranked}
-                    onImageMove={moveToRanking}
+                    onImageMoveToTier={moveToSpecificTier}
                     aspectRatio={aspectRatio}
                   />
                 </div>
