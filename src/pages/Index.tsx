@@ -361,7 +361,7 @@ const Index = () => {
               </div>
             )}
 
-            {mode === 'tierlist' && allTierImages.length > 0 && (
+            {mode === 'tierlist' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -379,10 +379,12 @@ const Index = () => {
                     tierData={tierData}
                     tierConfigs={tierConfigs}
                     tierOrder={tierOrder}
+                    unrankedImages={unrankedImages}
                     onTierUpdate={handleTierUpdate}
                     onTierConfigUpdate={updateTierConfig}
                     onTierRemove={removeTier}
                     onImageClick={moveToUnranked}
+                    onImageMove={moveToRanking}
                     aspectRatio={aspectRatio}
                   />
                 </div>
@@ -392,18 +394,31 @@ const Index = () => {
             {unrankedImages.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Uploaded Images</h2>
-                <p className="text-l text-muted-foreground">Click an image to add it to your {mode === 'ranking' ? 'ranking' : 'tier list'}</p>
+                <p className="text-l text-muted-foreground">
+                  {mode === 'ranking' ? 'Click an image to add it to your ranking' : 'Click or drag images to add them to your tier list'}
+                </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {unrankedImages.map((image) => (
                     <div
                       key={image.id}
+                      draggable={mode === 'tierlist'}
+                      onDragStart={(e) => {
+                        if (mode === 'tierlist') {
+                          e.dataTransfer.setData('image-id', image.id);
+                          e.dataTransfer.setData('source', 'unranked');
+                          e.dataTransfer.effectAllowed = 'move';
+                        }
+                      }}
                       onClick={() => moveToRanking(image)}
-                      className={`${getAspectRatioClass(aspectRatio)} bg-muted rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg`}
+                      className={`${getAspectRatioClass(aspectRatio)} bg-muted rounded-lg overflow-hidden hover:scale-105 transition-all duration-200 hover:shadow-lg ${
+                        mode === 'tierlist' ? 'cursor-move' : 'cursor-pointer'
+                      }`}
                     >
                       <img
                         src={image.src}
                         alt={image.alt}
                         className="w-full h-full object-cover"
+                        draggable={false}
                       />
                     </div>
                   ))}

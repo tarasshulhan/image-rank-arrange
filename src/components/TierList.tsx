@@ -25,14 +25,16 @@ interface TierListProps {
   tierData: TierData;
   tierConfigs: TierConfigs;
   tierOrder: string[];
+  unrankedImages: ImageItem[];
   onTierUpdate: (newTierData: TierData) => void;
   onTierConfigUpdate: (tier: string, config: TierConfig) => void;
   onTierRemove: (tier: string) => void;
   onImageClick?: (image: ImageItem) => void;
+  onImageMove?: (image: ImageItem) => void;
   aspectRatio: 'wide' | 'square' | 'vertical';
 }
 
-const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, onTierUpdate, onTierConfigUpdate, onTierRemove, onImageClick, aspectRatio }) => {
+const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, unrankedImages, onTierUpdate, onTierConfigUpdate, onTierRemove, onImageClick, onImageMove, aspectRatio }) => {
   const [draggedImage, setDraggedImage] = useState<{ image: ImageItem; sourceTier: string } | null>(null);
   const [editingTier, setEditingTier] = useState<string | null>(null);
   const [tempTierName, setTempTierName] = useState('');
@@ -65,6 +67,25 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, o
 
   const handleDrop = useCallback((targetTier: string) => (e: React.DragEvent) => {
     e.preventDefault();
+    
+    const imageId = e.dataTransfer.getData('image-id');
+    const source = e.dataTransfer.getData('source');
+    
+    if (source === 'unranked') {
+      // Moving from unranked to tier
+      const image = unrankedImages.find(img => img.id === imageId);
+      if (image && onImageMove) {
+        // Create a temporary drag state to move to specific tier
+        setDraggedImage({ image, sourceTier: 'unranked' });
+        
+        const newTierData = { ...tierData };
+        newTierData[targetTier] = [...(newTierData[targetTier] || []), image];
+        onTierUpdate(newTierData);
+        onImageMove(image);
+        setDraggedImage(null);
+      }
+      return;
+    }
     
     if (!draggedImage) return;
 
