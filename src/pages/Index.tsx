@@ -409,7 +409,11 @@ const Index = () => {
                           e.dataTransfer.effectAllowed = 'move';
                         }
                       }}
-                      onClick={() => moveToRanking(image)}
+                      onClick={() => {
+                        if (mode === 'ranking') {
+                          moveToRanking(image);
+                        }
+                      }}
                       className={`${getAspectRatioClass(aspectRatio)} bg-muted rounded-lg overflow-hidden hover:scale-105 transition-all duration-200 hover:shadow-lg ${
                         mode === 'tierlist' ? 'cursor-move' : 'cursor-pointer'
                       }`}
