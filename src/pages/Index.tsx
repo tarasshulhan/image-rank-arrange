@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import RankingGrid from '@/components/RankingGrid';
 import ExportButton from '@/components/ExportButton';
@@ -17,6 +17,37 @@ const Index = () => {
   const [rankedImages, setRankedImages] = useState<ImageItem[]>([]);
   const exportRef = useRef<HTMLDivElement>(null);
   const additionalUploadRef = useRef<HTMLInputElement>(null);
+
+  // Load images from localStorage on mount
+  useEffect(() => {
+    const savedUnranked = localStorage.getItem('ranking-app-unranked');
+    const savedRanked = localStorage.getItem('ranking-app-ranked');
+    
+    if (savedUnranked) {
+      try {
+        setUnrankedImages(JSON.parse(savedUnranked));
+      } catch (error) {
+        console.error('Error loading unranked images:', error);
+      }
+    }
+    
+    if (savedRanked) {
+      try {
+        setRankedImages(JSON.parse(savedRanked));
+      } catch (error) {
+        console.error('Error loading ranked images:', error);
+      }
+    }
+  }, []);
+
+  // Save to localStorage whenever images change
+  useEffect(() => {
+    localStorage.setItem('ranking-app-unranked', JSON.stringify(unrankedImages));
+  }, [unrankedImages]);
+
+  useEffect(() => {
+    localStorage.setItem('ranking-app-ranked', JSON.stringify(rankedImages));
+  }, [rankedImages]);
 
   const handleImagesUpload = useCallback((files: File[]) => {
     const newImages: ImageItem[] = files.map((file) => ({
@@ -49,6 +80,9 @@ const Index = () => {
     });
     setUnrankedImages([]);
     setRankedImages([]);
+    // Clear localStorage
+    localStorage.removeItem('ranking-app-unranked');
+    localStorage.removeItem('ranking-app-ranked');
   }, [unrankedImages, rankedImages]);
 
   const allImages = [...unrankedImages, ...rankedImages];
