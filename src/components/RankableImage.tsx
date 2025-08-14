@@ -55,7 +55,7 @@ const RankableImage: React.FC<RankableImageProps> = ({
         ${onImageClick ? 'cursor-pointer' : 'cursor-move'}
       `}
     >
-      <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+      <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
         <img
           src={src}
           alt={alt}
