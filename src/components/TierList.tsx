@@ -68,16 +68,21 @@ const TierList: React.FC<TierListProps> = ({ tierData, tierConfigs, tierOrder, u
   const handleDrop = useCallback((targetTier: string) => (e: React.DragEvent) => {
     e.preventDefault();
     
-    const imageId = e.dataTransfer.getData('image-id');
-    const source = e.dataTransfer.getData('source');
-    
-    if (source === 'unranked') {
-      // Moving from unranked to tier
-      const image = unrankedImages.find(img => img.id === imageId);
-      if (image && onImageMoveToTier) {
-        onImageMoveToTier(image, targetTier);
+    try {
+      const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+      console.log('Drop data:', dragData, 'Target tier:', targetTier);
+      
+      if (dragData.source === 'unranked') {
+        // Moving from unranked to tier
+        const image = unrankedImages.find(img => img.id === dragData.imageId);
+        console.log('Found image:', image);
+        if (image && onImageMoveToTier) {
+          onImageMoveToTier(image, targetTier);
+        }
+        return;
       }
-      return;
+    } catch (error) {
+      console.error('Error parsing drag data:', error);
     }
     
     if (!draggedImage) return;

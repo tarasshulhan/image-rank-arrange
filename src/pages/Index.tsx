@@ -409,8 +409,11 @@ const Index = () => {
                       draggable={mode === 'tierlist'}
                       onDragStart={(e) => {
                         if (mode === 'tierlist') {
-                          e.dataTransfer.setData('image-id', image.id);
-                          e.dataTransfer.setData('source', 'unranked');
+                          console.log('Dragging image:', image.id, image.alt);
+                          e.dataTransfer.setData('text/plain', JSON.stringify({
+                            imageId: image.id,
+                            source: 'unranked'
+                          }));
                           e.dataTransfer.effectAllowed = 'move';
                         }
                       }}
